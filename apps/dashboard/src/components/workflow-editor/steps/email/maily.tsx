@@ -1,5 +1,6 @@
 import { FormControl, FormField, FormMessage } from '@/components/primitives/form/form';
 import { useWorkflow } from '@/components/workflow-editor/workflow-provider';
+import { useFeatureFlag } from '@/hooks/use-feature-flag';
 import { parseStepVariablesToLiquidVariables } from '@/utils/parseStepVariablesToLiquidVariables';
 import { cn } from '@/utils/ui';
 import { Editor } from '@maily-to/core';
@@ -20,6 +21,7 @@ import {
   spacer,
   text,
 } from '@maily-to/core/blocks';
+import { FeatureFlagsKeysEnum } from '@novu/shared';
 import type { Editor as TiptapEditor } from '@tiptap/core';
 import { HTMLAttributes, useMemo, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
@@ -32,6 +34,15 @@ export const Maily = (props: MailyProps) => {
   const [_, setEditor] = useState<TiptapEditor>();
   const { control } = useFormContext();
 
+  const isForBlockEnabled = useFeatureFlag(FeatureFlagsKeysEnum.IS_ND_EMAIL_FOR_BLOCK_ENABLED);
+  const isShowEnabled = useFeatureFlag(FeatureFlagsKeysEnum.IS_ND_EMAIL_SHOW_ENABLED);
+
+  /* 
+button:has(.lucide-eye) {
+  display: none;
+}
+  */
+
   return (
     <FormField
       control={control}
@@ -39,9 +50,17 @@ export const Maily = (props: MailyProps) => {
       render={({ field }) => {
         return (
           <>
+            {!isShowEnabled && (
+              <style>{`
+                  button:has(.lucide-eye) {
+                    display: none;
+                  }
+                `}</style>
+            )}
             <div className={cn('mx-auto flex h-full w-full', className)} {...rest}>
               <FormControl>
                 <Editor
+                  key={isForBlockEnabled ? 'for-block-enabled' : 'for-block-disabled'}
                   config={{
                     hasMenuBar: false,
                     wrapClassName: 'h-full w-full',
@@ -57,7 +76,7 @@ export const Maily = (props: MailyProps) => {
                     image,
                     section,
                     columns,
-                    forLoop,
+                    ...(isForBlockEnabled ? [forLoop] : []),
                     divider,
                     spacer,
                     button,
