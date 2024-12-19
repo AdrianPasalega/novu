@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ApiRateLimitCategoryEnum, ExternalSubscriberId, TopicKey, UserSessionData } from '@novu/shared';
 
 import {
@@ -45,6 +45,7 @@ import { ThrottlerCategory } from '../rate-limiting/guards';
 import { UserAuthentication } from '../shared/framework/swagger/api.key.security';
 import { SdkGroupName, SdkMethodName } from '../shared/framework/swagger/sdk.decorators';
 import { AssignSubscriberToTopicDto } from './dtos/assignSubscriberToTopicDto';
+import { ErrorDto } from '../../error-dto';
 
 @ThrottlerCategory(ApiRateLimitCategoryEnum.CONFIGURATION)
 @ApiCommonResponses()
@@ -166,29 +167,11 @@ export class TopicsController {
 
   @Get('')
   @ExternalApiAccessible()
-  @ApiQuery({
-    name: 'key',
-    type: String,
-    description: 'Topic key',
-    required: false,
-  })
-  @ApiQuery({
-    name: 'page',
-    type: Number,
-    description: 'Number of page for the pagination',
-    required: false,
-  })
-  @ApiQuery({
-    name: 'pageSize',
-    type: Number,
-    description: 'Size of page for the pagination',
-    required: false,
-  })
   @ApiOkResponse({
     type: FilterTopicsResponseDto,
   })
   @ApiOperation({
-    summary: 'Filter topics',
+    summary: 'Get topic list filtered ',
     description:
       'Returns a list of topics that can be paginated using the `page` query ' +
       'parameter and filtered by the topic key with the `key` query parameter',
@@ -197,6 +180,8 @@ export class TopicsController {
     @UserSession() user: UserSessionData,
     @Query() query?: FilterTopicsRequestDto
   ): Promise<FilterTopicsResponseDto> {
+    console.log(JSON.stringify(query));
+
     return await this.filterTopicsUseCase.execute(
       FilterTopicsCommand.create({
         environmentId: user.environmentId,
@@ -214,6 +199,7 @@ export class TopicsController {
     description: 'The topic has been deleted correctly',
   })
   @ApiConflictResponse({
+    type: ErrorDto,
     description:
       'The topic you are trying to delete has subscribers assigned to it. Delete the subscribers before deleting the topic.',
   })

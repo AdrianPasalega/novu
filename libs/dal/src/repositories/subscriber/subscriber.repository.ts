@@ -6,6 +6,7 @@ import { IExternalSubscribersEntity } from './types';
 import { BaseRepository } from '../base-repository';
 import { DalException } from '../../shared';
 import type { EnforceEnvOrOrgIds } from '../../types';
+import { BulkCreateSubscriberEntity } from './bulk.create.subscriber.entity';
 
 type SubscriberQuery = FilterQuery<SubscriberDBModel> & EnforceEnvOrOrgIds;
 
@@ -33,7 +34,7 @@ export class SubscriberRepository extends BaseRepository<SubscriberDBModel, Subs
     subscribers: ISubscribersDefine[],
     environmentId: EnvironmentId,
     organizationId: OrganizationId
-  ) {
+  ): Promise<BulkCreateSubscriberEntity> {
     const bulkWriteOps = subscribers.map((subscriber) => {
       const { subscriberId, ...rest } = subscriber;
 
@@ -109,7 +110,42 @@ export class SubscriberRepository extends BaseRepository<SubscriberDBModel, Subs
     });
   }
 
-  async searchSubscribers(environmentId: string, subscriberIds: string[] = [], emails: string[] = [], search?: string) {
+  async searchSubscribersDatabaseIds(
+    environmentId: string,
+    subscriberIds: string[] = [],
+    emails: string[] = [],
+    search?: string
+  ): Promise<string[]> {
+    const filters = this.buildFilters(emails, subscriberIds, search);
+
+    return (
+      await this.find(
+        {
+          _environmentId: environmentId,
+          $or: filters,
+        },
+        '_id'
+      )
+    ).map((entity) => entity._id);
+  }
+  async getSubscriberByIds(environmentId: string, subscriberDatabaseIds: string[] = []): Promise<SubscriberEntity[]> {
+    if (!subscriberDatabaseIds?.length) {
+      return [];
+    }
+
+    return await this.find({
+      _environmentId: environmentId,
+      $or: [
+        {
+          subscriberId: {
+            $in: [...new Set(subscriberDatabaseIds)],
+          },
+        },
+      ],
+    });
+  }
+
+  private buildFilters(emails: string[], subscriberIds: string[], search: string | undefined) {
     const filters: any = [];
 
     if (emails?.length) {
@@ -142,13 +178,7 @@ export class SubscriberRepository extends BaseRepository<SubscriberDBModel, Subs
       );
     }
 
-    return await this.find(
-      {
-        _environmentId: environmentId,
-        $or: filters,
-      },
-      '_id'
-    );
+    return filters;
   }
 
   async estimatedDocumentCount(): Promise<number> {

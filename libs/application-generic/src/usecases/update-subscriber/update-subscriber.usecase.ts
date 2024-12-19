@@ -1,10 +1,10 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { SubscriberEntity, SubscriberRepository } from '@novu/dal';
 
 import {
-  InvalidateCacheService,
   buildSubscriberKey,
   CachedEntity,
+  InvalidateCacheService,
 } from '../../services/cache';
 import { subscriberNeedUpdate } from '../../utils/subscriber';
 
@@ -40,9 +40,7 @@ export class UpdateSubscriber {
 
     const updatePayload: Partial<SubscriberEntity> = {};
 
-    if (command.email !== undefined) {
-      updatePayload.email = command.email;
-    }
+    updatePayload.email = command.email;
 
     if (command.phone != null) {
       updatePayload.phone = command.phone;
