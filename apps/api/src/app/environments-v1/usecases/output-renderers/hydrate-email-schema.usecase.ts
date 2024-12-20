@@ -228,9 +228,15 @@ export class HydrateEmailSchemaUseCase {
   }
 }
 
+const markSchema = z.object({
+  type: z.string().optional(),
+  attrs: z.record(z.unknown()).optional(),
+});
+
 export const TipTapSchema = z.object({
   type: z.string().optional(),
   content: z.array(z.lazy(() => TipTapSchema)).optional(),
   text: z.string().optional(),
+  marks: z.array(markSchema).optional(),
   attrs: z.record(z.unknown()).optional(),
 });
